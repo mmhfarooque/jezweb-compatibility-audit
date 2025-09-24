@@ -1,0 +1,25 @@
+name: Build release zip
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer
+      - run: composer install --no-dev --prefer-dist --optimize-autoloader
+      - run: |
+          PLUGIN=jezweb-compat-audit
+          VER=${GITHUB_REF_NAME#v}
+          mkdir -p dist
+          zip -r dist/$PLUGIN-$VER.zip . -x '*.git*' '.github/*' 'dist/*'
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
