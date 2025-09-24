@@ -4,5 +4,8 @@
   "type": "wordpress-plugin",
   "require": {
     "yahniselsts/plugin-update-checker": "^5.4"
-  }
+  },
+  "repositories": [
+    { "type": "composer", "url": "https://repo.packagist.org" }
+  ]
 }
