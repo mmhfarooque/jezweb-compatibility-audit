@@ -12,4 +12,4 @@ A WordPress plugin that scans your site (themes, child themes, plugins) for **PH
 ## Installation
 1. Download release from [Releases](../../releases).
 2. Upload in WP Admin → Plugins → Add New → Upload Plugin.
-3. Activate and run under Tools → Jezweb Compatibility Audit.
+3. Activate and run under Tools → Jezweb Compatibility Audit. 
