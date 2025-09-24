@@ -1,0 +1,8 @@
+{
+  "name": "jezweb/compat-audit",
+  "description": "Jezweb PHP 8.x compatibility audit for WordPress",
+  "type": "wordpress-plugin",
+  "require": {
+    "yahniselsts/plugin-update-checker": "^5.4"
+  }
+}
