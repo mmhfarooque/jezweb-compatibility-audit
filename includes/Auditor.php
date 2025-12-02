@@ -174,9 +174,16 @@ class Auditor {
      * @return array Diagnostic info
      */
     public static function get_diagnostics() {
-        $phpcs_bin = JW_COMPAT_AUDIT_DIR . 'vendor/bin/phpcs';
+        // Use the actual PHPCS script path (not composer bin wrapper)
+        $phpcs_bin = JW_COMPAT_AUDIT_DIR . 'vendor/squizlabs/php_codesniffer/bin/phpcs';
+        $phpcs_bin_fallback = JW_COMPAT_AUDIT_DIR . 'vendor/bin/phpcs';
         $ruleset = JW_COMPAT_AUDIT_DIR . 'phpcs-compat.xml';
         $php_bin = self::find_php_binary();
+
+        // Use direct path if available, otherwise fallback
+        if (!file_exists($phpcs_bin)) {
+            $phpcs_bin = $phpcs_bin_fallback;
+        }
 
         $diagnostics = [
             'exec_available' => self::is_exec_available(),
@@ -231,16 +238,22 @@ class Auditor {
             ];
         }
 
-        $phpcs_bin = JW_COMPAT_AUDIT_DIR . 'vendor/bin/phpcs';
+        // Use the actual PHPCS script, not the Composer bin wrapper
+        // The bin wrapper causes issues with LiteSpeed PHP (lsphp)
+        $phpcs_bin = JW_COMPAT_AUDIT_DIR . 'vendor/squizlabs/php_codesniffer/bin/phpcs';
         $ruleset = JW_COMPAT_AUDIT_DIR . 'phpcs-compat.xml';
 
         // Validate PHPCS binary exists
         if (!file_exists($phpcs_bin)) {
-            return [
-                'error' => 'PHPCS binary not found. Please run composer install.',
-                'totals' => ['errors' => 0, 'warnings' => 0],
-                'files' => [],
-            ];
+            // Fallback to composer bin if direct path doesn't exist
+            $phpcs_bin = JW_COMPAT_AUDIT_DIR . 'vendor/bin/phpcs';
+            if (!file_exists($phpcs_bin)) {
+                return [
+                    'error' => 'PHPCS binary not found. Please run composer install.',
+                    'totals' => ['errors' => 0, 'warnings' => 0],
+                    'files' => [],
+                ];
+            }
         }
 
         // Validate ruleset exists
