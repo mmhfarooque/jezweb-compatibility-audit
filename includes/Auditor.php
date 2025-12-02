@@ -277,8 +277,9 @@ class Auditor {
 
         // Build command - run phpcs via PHP explicitly for better compatibility
         // This avoids issues with shebang lines on shared hosting
+        // Add memory limit and ignore warnings to ensure clean JSON output
         $cmd = sprintf(
-            '%s %s --standard=%s --runtime-set testVersion %s --report=json --extensions=php %s 2>&1',
+            '%s -d memory_limit=256M %s --standard=%s --runtime-set testVersion %s --report=json --extensions=php %s 2>&1',
             escapeshellcmd($php_bin),
             escapeshellarg($phpcs_bin),
             escapeshellarg($ruleset),
@@ -292,9 +293,30 @@ class Auditor {
 
         $json_output = implode("\n", $output);
 
-        // PHPCS may output warnings before JSON - try to extract just the JSON part
+        // Check for empty output
+        if (empty(trim($json_output))) {
+            return [
+                'error' => 'PHPCS returned empty output (possible timeout or no PHP files found)',
+                'exit_code' => $exit_code,
+                'totals' => ['errors' => 0, 'warnings' => 0],
+                'files' => [],
+            ];
+        }
+
+        // PHPCS may output warnings/errors before JSON - try to extract just the JSON part
         $json_start = strpos($json_output, '{');
-        if ($json_start !== false && $json_start > 0) {
+        if ($json_start === false) {
+            // No JSON found at all - return the raw output as error
+            return [
+                'error' => 'PHPCS did not return JSON output',
+                'raw_output' => substr($json_output, 0, 500),
+                'exit_code' => $exit_code,
+                'totals' => ['errors' => 0, 'warnings' => 0],
+                'files' => [],
+            ];
+        }
+
+        if ($json_start > 0) {
             $json_output = substr($json_output, $json_start);
         }
 
@@ -305,7 +327,6 @@ class Auditor {
                 'error' => 'Failed to parse PHPCS output: ' . json_last_error_msg(),
                 'raw_output' => substr($json_output, 0, 500),
                 'exit_code' => $exit_code,
-                'command' => $cmd,
             ];
         }
 
@@ -377,12 +398,17 @@ class Auditor {
         }
 
         if (isset($scan_result['error'])) {
+            $error_msg = $scan_result['error'];
+            // Append raw_output if available for more context
+            if (!empty($scan_result['raw_output'])) {
+                $error_msg .= ' | Output: ' . substr($scan_result['raw_output'], 0, 200);
+            }
             return [
                 'errors' => 0,
                 'warnings' => 0,
                 'files' => 0,
                 'scan_status' => 'failed',
-                'scan_error' => $scan_result['error'],
+                'scan_error' => $error_msg,
             ];
         }
 
