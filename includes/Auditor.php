@@ -212,6 +212,37 @@ class Auditor {
                 $diagnostics['phpcs_version_output'] = implode("\n", $phpcs_output);
                 $diagnostics['phpcs_exec_code'] = $phpcs_code;
             }
+
+            // Test actual scan on the plugin's own main file
+            if (file_exists($phpcs_bin) && file_exists($ruleset)) {
+                $test_file = JW_COMPAT_AUDIT_DIR . 'jezweb-compat-audit.php';
+                $scan_cmd = sprintf(
+                    '%s -d memory_limit=256M %s --standard=%s --runtime-set testVersion %s --report=json --extensions=php %s 2>&1',
+                    escapeshellcmd($php_bin),
+                    escapeshellarg($phpcs_bin),
+                    escapeshellarg($ruleset),
+                    escapeshellarg('8.3'),
+                    escapeshellarg($test_file)
+                );
+                $scan_output = [];
+                $scan_code = 0;
+                exec($scan_cmd, $scan_output, $scan_code);
+                $scan_json = implode("\n", $scan_output);
+
+                $diagnostics['test_scan_command'] = $scan_cmd;
+                $diagnostics['test_scan_exit_code'] = $scan_code;
+                $diagnostics['test_scan_output_length'] = strlen($scan_json);
+                $diagnostics['test_scan_output_preview'] = substr($scan_json, 0, 300);
+
+                // Try to parse it
+                $json_start = strpos($scan_json, '{');
+                if ($json_start !== false) {
+                    $diagnostics['test_scan_json_found'] = true;
+                    $diagnostics['test_scan_json_start_pos'] = $json_start;
+                } else {
+                    $diagnostics['test_scan_json_found'] = false;
+                }
+            }
         }
 
         return $diagnostics;
