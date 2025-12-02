@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Jezweb Compatibility Audit
  * Description: Jezweb-branded PHP 8.x compatibility auditor (themes, child theme, plugins) with per-component results, AJAX batch scanning, WP-CLI commands, REST API, and GitHub auto-updates.
- * Version: 0.5.8
+ * Version: 0.5.9
  * Author: Jezweb
  * License: GPL-2.0-or-later
  * Requires PHP: 7.4
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('JW_COMPAT_AUDIT_VER', '0.5.8');
+define('JW_COMPAT_AUDIT_VER', '0.5.9');
 define('JW_COMPAT_AUDIT_DIR', plugin_dir_path(__FILE__));
 define('JW_COMPAT_AUDIT_URL', plugin_dir_url(__FILE__));
 define('JW_COMPAT_AUDIT_REPORT', WP_CONTENT_DIR . '/compat-report.json');
