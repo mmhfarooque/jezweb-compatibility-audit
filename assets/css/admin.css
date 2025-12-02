@@ -1,0 +1,283 @@
+/**
+ * Jezweb Compatibility Audit - Admin Styles
+ */
+
+/* Progress Container */
+#jw-progress-container {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.jw-progress-bar {
+    background: #e5e5e5;
+    border-radius: 4px;
+    height: 24px;
+    overflow: hidden;
+    position: relative;
+}
+
+#jw-progress-fill {
+    background: linear-gradient(90deg, #0073aa, #00a0d2);
+    height: 100%;
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+#jw-progress-percent {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: 600;
+    color: #23282d;
+    text-shadow: 0 0 2px #fff;
+}
+
+.jw-progress-text {
+    margin: 10px 0 5px;
+    font-size: 14px;
+    color: #23282d;
+}
+
+.jw-progress-count {
+    margin: 0;
+    font-size: 13px;
+    color: #666;
+}
+
+/* Status Badges */
+.jw-status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.jw-status-pass {
+    background: #46b450;
+    color: #fff;
+}
+
+.jw-status-warn {
+    background: #ffb900;
+    color: #23282d;
+}
+
+.jw-status-fail {
+    background: #dc3232;
+    color: #fff;
+}
+
+.jw-status-error {
+    background: #666;
+    color: #fff;
+}
+
+/* Health Score */
+.jw-health-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.jw-health-score-container {
+    text-align: center;
+}
+
+.jw-health-score-label {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+#jw-health-score {
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+#jw-health-score.good {
+    color: #46b450;
+}
+
+#jw-health-score.moderate {
+    color: #ffb900;
+}
+
+#jw-health-score.poor {
+    color: #dc3232;
+}
+
+.jw-health-stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.jw-stat-item {
+    text-align: center;
+    padding: 10px 15px;
+    background: #f6f7f7;
+    border-radius: 4px;
+    min-width: 80px;
+}
+
+.jw-stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: #23282d;
+}
+
+.jw-stat-label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 3px;
+}
+
+/* Update Available Badge */
+.jw-update-available {
+    display: inline-block;
+    background: #0073aa;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Results Tables */
+#jw-audit-results {
+    margin-top: 20px;
+}
+
+#jw-audit-results h2 {
+    margin-top: 30px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ccd0d4;
+}
+
+#jw-audit-results .widefat {
+    margin-top: 10px;
+}
+
+#jw-audit-results .widefat th,
+#jw-audit-results .widefat td {
+    padding: 10px 12px;
+    vertical-align: middle;
+}
+
+/* Detail Rows */
+.jw-detail-row td {
+    background: #f6f7f7 !important;
+    padding: 15px !important;
+}
+
+.jw-issues-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+}
+
+.jw-issues-table th,
+.jw-issues-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e5e5e5;
+    font-size: 13px;
+}
+
+.jw-issues-table th {
+    background: #f0f0f1;
+    font-weight: 600;
+}
+
+.jw-issues-table tr:last-child td {
+    border-bottom: none;
+}
+
+.jw-issue-error td:first-child {
+    border-left: 3px solid #dc3232;
+}
+
+.jw-issue-warning td:first-child {
+    border-left: 3px solid #ffb900;
+}
+
+/* PHP Version Selector */
+.jw-audit-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.jw-audit-controls label {
+    font-weight: 500;
+}
+
+.jw-audit-controls select {
+    min-width: 150px;
+}
+
+/* Toggle Button */
+.jw-toggle-details {
+    padding: 2px 8px !important;
+    font-size: 11px !important;
+}
+
+/* Notices */
+.jw-audit-notice {
+    margin: 15px 0 !important;
+}
+
+/* Responsive */
+@media screen and (max-width: 782px) {
+    .jw-health-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .jw-health-stats {
+        width: 100%;
+    }
+
+    .jw-stat-item {
+        flex: 1;
+        min-width: 60px;
+    }
+
+    .jw-audit-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    #jw-audit-results .widefat {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+/* Animation for progress */
+@keyframes jw-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.jw-scanning #jw-progress-fill {
+    animation: jw-pulse 1.5s ease-in-out infinite;
+}

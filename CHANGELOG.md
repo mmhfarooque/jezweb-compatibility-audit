@@ -1,7 +1,27 @@
 # Changelog
 
-All notable changes to **Jezweb Compatibility Audit** will be documented here.  
+All notable changes to **Jezweb Compatibility Audit** will be documented here.
 This project follows [Semantic Versioning](https://semver.org/).
+
+---
+
+## [0.5.0] - 2025-12-02
+### Added
+- **AJAX Batch Processing**: Real-time progress bar with component-by-component scanning
+- **Configurable PHP Version**: Select target PHP version (8.0+, 8.1+, 8.2+, 8.3+, 8.3, 8.4+)
+- **Enhanced UI**: Health score dashboard, color-coded status badges, expandable error details
+- **Full WP-CLI Support**: Commands for `audit`, `scan`, `report`, and `inventory`
+- **REST API**: Endpoints at `/wp-json/jezweb/v1/` for audit, inventory, scan, and queue
+- **Bundled PHPCS**: PHP_CodeSniffer and PHPCompatibilityWP included via Composer
+
+### Changed
+- Complete rewrite of Auditor class with proper PHPCS integration
+- Improved Admin UI with modern styling and responsive design
+- Better error handling and validation throughout
+
+### Fixed
+- Scanning now properly uses PHPCompatibilityWP ruleset
+- Remote metadata fetching from WordPress.org API
 
 ---
 
