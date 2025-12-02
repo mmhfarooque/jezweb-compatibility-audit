@@ -17,6 +17,21 @@ class Ajax {
         add_action('wp_ajax_jw_compat_start_audit', [__CLASS__, 'start_audit']);
         add_action('wp_ajax_jw_compat_scan_component', [__CLASS__, 'scan_component']);
         add_action('wp_ajax_jw_compat_finalize_audit', [__CLASS__, 'finalize_audit']);
+        add_action('wp_ajax_jw_compat_diagnostics', [__CLASS__, 'get_diagnostics']);
+    }
+
+    /**
+     * Get diagnostic information
+     */
+    public static function get_diagnostics() {
+        check_ajax_referer('jw_compat_audit', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Permission denied.']);
+        }
+
+        $diagnostics = Auditor::get_diagnostics();
+        wp_send_json_success($diagnostics);
     }
 
     /**

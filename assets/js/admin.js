@@ -15,6 +15,38 @@
         bindEvents: function() {
             $('#jw-run-audit-btn').on('click', this.startAudit.bind(this));
             $(document).on('click', '.jw-toggle-details', this.toggleDetails.bind(this));
+            $('#jw-run-diagnostics').on('click', this.runDiagnostics.bind(this));
+        },
+
+        runDiagnostics: function(e) {
+            e.preventDefault();
+            var self = this;
+            var $btn = $('#jw-run-diagnostics');
+            var $output = $('#jw-diagnostics-output');
+
+            $btn.prop('disabled', true).text('Running...');
+            $output.hide();
+
+            $.ajax({
+                url: jwCompatAudit.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'jw_compat_diagnostics',
+                    nonce: jwCompatAudit.nonce
+                },
+                success: function(response) {
+                    $btn.prop('disabled', false).text('Run Diagnostics');
+                    if (response.success) {
+                        $output.text(JSON.stringify(response.data, null, 2)).show();
+                    } else {
+                        $output.text('Error: ' + (response.data.message || 'Unknown error')).show();
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).text('Run Diagnostics');
+                    $output.text('Network error. Please try again.').show();
+                }
+            });
         },
 
         startAudit: function(e) {

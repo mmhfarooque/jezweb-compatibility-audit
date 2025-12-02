@@ -169,6 +169,48 @@ class Auditor {
     }
 
     /**
+     * Get diagnostic information for troubleshooting
+     *
+     * @return array Diagnostic info
+     */
+    public static function get_diagnostics() {
+        $phpcs_bin = JW_COMPAT_AUDIT_DIR . 'vendor/bin/phpcs';
+        $ruleset = JW_COMPAT_AUDIT_DIR . 'phpcs-compat.xml';
+        $php_bin = self::find_php_binary();
+
+        $diagnostics = [
+            'exec_available' => self::is_exec_available(),
+            'php_binary' => $php_bin ?: 'NOT FOUND',
+            'php_binary_constant' => defined('PHP_BINARY') ? PHP_BINARY : 'NOT DEFINED',
+            'phpcs_exists' => file_exists($phpcs_bin),
+            'phpcs_path' => $phpcs_bin,
+            'ruleset_exists' => file_exists($ruleset),
+            'ruleset_path' => $ruleset,
+            'plugin_dir' => JW_COMPAT_AUDIT_DIR,
+        ];
+
+        // Try a test exec if available
+        if (self::is_exec_available() && $php_bin) {
+            $test_output = [];
+            $test_code = 0;
+            exec(escapeshellcmd($php_bin) . ' -v 2>&1', $test_output, $test_code);
+            $diagnostics['php_version_output'] = implode("\n", array_slice($test_output, 0, 2));
+            $diagnostics['php_exec_code'] = $test_code;
+
+            // Test PHPCS itself
+            if (file_exists($phpcs_bin)) {
+                $phpcs_output = [];
+                $phpcs_code = 0;
+                exec(escapeshellcmd($php_bin) . ' ' . escapeshellarg($phpcs_bin) . ' --version 2>&1', $phpcs_output, $phpcs_code);
+                $diagnostics['phpcs_version_output'] = implode("\n", $phpcs_output);
+                $diagnostics['phpcs_exec_code'] = $phpcs_code;
+            }
+        }
+
+        return $diagnostics;
+    }
+
+    /**
      * Scan a single component (plugin or theme directory) for PHP compatibility
      *
      * @param string $path Path to scan
@@ -210,10 +252,22 @@ class Auditor {
             ];
         }
 
-        // Build command
+        // Find PHP binary - try multiple common locations
+        $php_bin = self::find_php_binary();
+        if (!$php_bin) {
+            return [
+                'error' => 'PHP binary not found. Cannot execute PHPCS.',
+                'totals' => ['errors' => 0, 'warnings' => 0],
+                'files' => [],
+            ];
+        }
+
+        // Build command - run phpcs via PHP explicitly for better compatibility
+        // This avoids issues with shebang lines on shared hosting
         $cmd = sprintf(
-            '%s --standard=%s --runtime-set testVersion %s --report=json --extensions=php %s 2>&1',
-            escapeshellcmd($phpcs_bin),
+            '%s %s --standard=%s --runtime-set testVersion %s --report=json --extensions=php %s 2>&1',
+            escapeshellcmd($php_bin),
+            escapeshellarg($phpcs_bin),
             escapeshellarg($ruleset),
             escapeshellarg($php_version),
             escapeshellarg($path)
@@ -224,17 +278,71 @@ class Auditor {
         exec($cmd, $output, $exit_code);
 
         $json_output = implode("\n", $output);
+
+        // PHPCS may output warnings before JSON - try to extract just the JSON part
+        $json_start = strpos($json_output, '{');
+        if ($json_start !== false && $json_start > 0) {
+            $json_output = substr($json_output, $json_start);
+        }
+
         $result = json_decode($json_output, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             return [
-                'error' => 'Failed to parse PHPCS output',
-                'raw_output' => $json_output,
+                'error' => 'Failed to parse PHPCS output: ' . json_last_error_msg(),
+                'raw_output' => substr($json_output, 0, 500),
                 'exit_code' => $exit_code,
+                'command' => $cmd,
             ];
         }
 
         return $result;
+    }
+
+    /**
+     * Find the PHP binary path
+     *
+     * @return string|false Path to PHP binary or false if not found
+     */
+    public static function find_php_binary() {
+        // Check PHP_BINARY constant first (PHP 5.4+)
+        if (defined('PHP_BINARY') && PHP_BINARY && is_executable(PHP_BINARY)) {
+            return PHP_BINARY;
+        }
+
+        // Common PHP binary locations
+        $possible_paths = [
+            '/usr/bin/php',
+            '/usr/local/bin/php',
+            '/usr/bin/php8.3',
+            '/usr/bin/php8.2',
+            '/usr/bin/php8.1',
+            '/usr/bin/php8.0',
+            '/usr/bin/php7.4',
+            '/opt/cpanel/ea-php83/root/usr/bin/php',
+            '/opt/cpanel/ea-php82/root/usr/bin/php',
+            '/opt/cpanel/ea-php81/root/usr/bin/php',
+            '/opt/cpanel/ea-php80/root/usr/bin/php',
+            '/opt/alt/php83/usr/bin/php',
+            '/opt/alt/php82/usr/bin/php',
+            '/opt/alt/php81/usr/bin/php',
+            '/opt/alt/php80/usr/bin/php',
+        ];
+
+        foreach ($possible_paths as $path) {
+            if (file_exists($path) && is_executable($path)) {
+                return $path;
+            }
+        }
+
+        // Try 'which php' as last resort
+        $which_output = [];
+        exec('which php 2>/dev/null', $which_output);
+        if (!empty($which_output[0]) && is_executable($which_output[0])) {
+            return $which_output[0];
+        }
+
+        return false;
     }
 
     /**

@@ -104,12 +104,21 @@ class Admin {
 
             <?php if (!Auditor::is_exec_available()): ?>
                 <div class="jw-exec-warning">
-                    <strong>⚠️ Warning: exec() function is disabled</strong>
+                    <strong>Warning: exec() function is disabled</strong>
                     <p>The PHP <code>exec()</code> function is required for accurate scanning but is currently disabled on your server.
                     Scans will be marked as "SKIPPED" and results may not be reliable. Contact your hosting provider to enable it,
                     or use WP-CLI on a server where exec() is available.</p>
                 </div>
             <?php endif; ?>
+
+            <!-- Diagnostics Panel (collapsible) -->
+            <details class="jw-diagnostics-panel" style="margin: 15px 0; padding: 10px; background: #f9f9f9; border: 1px solid #ddd;">
+                <summary style="cursor: pointer; font-weight: bold;">System Diagnostics (click to expand)</summary>
+                <div id="jw-diagnostics-content" style="margin-top: 10px;">
+                    <button type="button" id="jw-run-diagnostics" class="button">Run Diagnostics</button>
+                    <pre id="jw-diagnostics-output" style="margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #ccc; overflow-x: auto; display: none;"></pre>
+                </div>
+            </details>
 
             <p>Scan your WordPress site (themes, child themes, plugins) for PHP compatibility issues.</p>
 
