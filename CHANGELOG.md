@@ -5,6 +5,15 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.5.2] - 2025-12-02
+### Fixed
+- Auto-refresh page after scan completes to display results immediately
+- Added loading overlay with spinner during page reload
+- Progress bar turns green with animation when scan completes
+- Shows error/warning count in completion message
+
+---
+
 ## [0.5.1] - 2025-12-02
 ### Security
 - Enhanced input validation and sanitization across all AJAX handlers

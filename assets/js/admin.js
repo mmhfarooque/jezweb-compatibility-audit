@@ -125,7 +125,7 @@
         finalizeAudit: function() {
             var self = this;
 
-            this.updateProgress(this.queue.length, this.queue.length, 'Finalizing...');
+            this.updateProgress(this.queue.length, this.queue.length, 'Finalizing and saving report...');
 
             $.ajax({
                 url: jwCompatAudit.ajaxUrl,
@@ -136,13 +136,25 @@
                     audit_id: this.auditId
                 },
                 success: function(response) {
-                    $('#jw-progress-container').hide();
-                    $('#jw-run-audit-btn').prop('disabled', false);
-
                     if (response.success) {
-                        self.displayResults();
-                        self.showSuccess('Audit completed! Found ' + response.data.total_errors + ' errors and ' + response.data.total_warnings + ' warnings.');
+                        // Show completion message
+                        self.updateProgress(
+                            self.queue.length,
+                            self.queue.length,
+                            'Audit complete! Found ' + response.data.total_errors + ' errors and ' + response.data.total_warnings + ' warnings.'
+                        );
+                        $('#jw-progress-percent').text('Done!');
+
+                        // Show loading overlay and reload page
+                        self.showLoadingOverlay('Loading results...');
+
+                        // Brief delay then reload to show server-rendered results
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 800);
                     } else {
+                        $('#jw-progress-container').hide();
+                        $('#jw-run-audit-btn').prop('disabled', false);
                         self.showError(response.data.message || 'Failed to finalize audit.');
                     }
                 },
@@ -342,6 +354,16 @@
                     $(this).remove();
                 });
             }, 5000);
+        },
+
+        showLoadingOverlay: function(message) {
+            var $overlay = $(
+                '<div class="jw-loading-overlay">' +
+                    '<div class="jw-loading-spinner"></div>' +
+                    '<div class="jw-loading-text">' + this.escapeHtml(message) + '</div>' +
+                '</div>'
+            );
+            $('body').append($overlay);
         }
     };
 

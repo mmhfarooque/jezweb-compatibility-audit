@@ -281,3 +281,49 @@
 .jw-scanning #jw-progress-fill {
     animation: jw-pulse 1.5s ease-in-out infinite;
 }
+
+/* Loading complete animation */
+@keyframes jw-complete-pulse {
+    0%, 100% { background: linear-gradient(90deg, #46b450, #5bc45e); }
+    50% { background: linear-gradient(90deg, #5bc45e, #46b450); }
+}
+
+#jw-progress-fill[style*="width: 100%"] {
+    background: linear-gradient(90deg, #46b450, #5bc45e);
+    animation: jw-complete-pulse 1s ease-in-out infinite;
+}
+
+/* Loading spinner for page reload */
+.jw-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.jw-loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e5e5e5;
+    border-top-color: #0073aa;
+    border-radius: 50%;
+    animation: jw-spin 1s linear infinite;
+}
+
+@keyframes jw-spin {
+    to { transform: rotate(360deg); }
+}
+
+.jw-loading-text {
+    margin-top: 15px;
+    font-size: 16px;
+    color: #23282d;
+    font-weight: 500;
+}
