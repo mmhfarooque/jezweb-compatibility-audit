@@ -5,6 +5,14 @@
     <!-- Use PHPCompatibilityWP ruleset (WordPress-aware) -->
     <rule ref="PHPCompatibilityWP"/>
 
+    <!--
+        Upgrade severity for functions removed in PHP 8.0+
+        These are marked as "deprecated" warnings but actually cause FATAL errors in PHP 8.0+
+    -->
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions">
+        <type>error</type>
+    </rule>
+
     <!-- Only check PHP files -->
     <arg name="extensions" value="php"/>
 
