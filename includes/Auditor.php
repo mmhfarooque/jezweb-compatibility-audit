@@ -185,19 +185,50 @@ class Auditor {
             $phpcs_bin = $phpcs_bin_fallback;
         }
 
-        // Check which PHP paths exist (including php-cli variants)
+        // Check which PHP paths exist - comprehensive search for LiteSpeed and other hosts
         $php_paths_checked = [];
         $check_paths = [
+            // LiteSpeed paths
+            '/usr/local/lsws/lsphp74/bin/php',
+            '/usr/local/lsws/lsphp80/bin/php',
+            '/usr/local/lsws/lsphp81/bin/php',
+            '/usr/local/lsws/lsphp82/bin/php',
+            '/usr/local/lsws/lsphp83/bin/php',
+            // Standard CLI
             '/usr/bin/php-cli',
             '/usr/bin/php',
-            '/opt/cpanel/ea-php74/root/usr/bin/php-cli',
-            '/opt/cpanel/ea-php74/root/usr/bin/php',
-            '/opt/alt/php74/usr/bin/php-cli',
+            '/usr/local/bin/php-cli',
+            '/usr/local/bin/php',
+            // CloudLinux
             '/opt/alt/php74/usr/bin/php',
-            '/usr/local/lsws/lsphp74/bin/php',
+            '/opt/alt/php80/usr/bin/php',
+            '/opt/alt/php81/usr/bin/php',
+            '/opt/alt/php82/usr/bin/php',
+            '/opt/alt/php83/usr/bin/php',
         ];
         foreach ($check_paths as $p) {
-            $php_paths_checked[$p] = file_exists($p) ? 'exists' : 'not found';
+            if (file_exists($p)) {
+                // Test if it's CLI
+                $test_out = [];
+                exec(escapeshellcmd($p) . ' -v 2>&1', $test_out);
+                $test_str = implode(' ', $test_out);
+                if (strpos($test_str, '(cli)') !== false) {
+                    $php_paths_checked[$p] = 'CLI';
+                } elseif (strpos($test_str, '(cgi') !== false) {
+                    $php_paths_checked[$p] = 'CGI (not usable)';
+                } elseif (strpos($test_str, 'litespeed') !== false) {
+                    $php_paths_checked[$p] = 'LiteSpeed (not usable)';
+                } else {
+                    $php_paths_checked[$p] = 'exists (unknown type)';
+                }
+            }
+        }
+
+        // Also try to find php binaries using locate or find
+        $find_output = [];
+        exec('find /usr/local/lsws -name "php" -type f 2>/dev/null | head -10', $find_output);
+        if (!empty($find_output)) {
+            $php_paths_checked['lsws_found'] = $find_output;
         }
 
         $diagnostics = [
