@@ -241,17 +241,36 @@ class Auditor {
      * Summarize scan results into error/warning counts
      *
      * @param array|null $scan_result PHPCS result
-     * @return array Summary with errors and warnings count
+     * @return array Summary with errors, warnings count, and scan status
      */
     public static function summarize_scan($scan_result) {
-        if (empty($scan_result) || isset($scan_result['error'])) {
-            return ['errors' => 0, 'warnings' => 0, 'files' => 0];
+        // If scan failed or returned an error, mark it as FAILED - not PASS!
+        if (empty($scan_result)) {
+            return [
+                'errors' => 0,
+                'warnings' => 0,
+                'files' => 0,
+                'scan_status' => 'failed',
+                'scan_error' => 'Scan returned empty result',
+            ];
+        }
+
+        if (isset($scan_result['error'])) {
+            return [
+                'errors' => 0,
+                'warnings' => 0,
+                'files' => 0,
+                'scan_status' => 'failed',
+                'scan_error' => $scan_result['error'],
+            ];
         }
 
         return [
             'errors' => $scan_result['totals']['errors'] ?? 0,
             'warnings' => $scan_result['totals']['warnings'] ?? 0,
             'files' => count($scan_result['files'] ?? []),
+            'scan_status' => 'success',
+            'scan_error' => null,
         ];
     }
 

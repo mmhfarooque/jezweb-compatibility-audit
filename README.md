@@ -1,6 +1,6 @@
 # Jezweb Compatibility Audit
 
-[![Version](https://img.shields.io/badge/version-0.5.2-blue.svg)](https://github.com/mmhfarooque/jezweb-compatibility-audit/releases)
+[![Version](https://img.shields.io/badge/version-0.5.3-blue.svg)](https://github.com/mmhfarooque/jezweb-compatibility-audit/releases)
 [![WordPress](https://img.shields.io/badge/WordPress-5.6%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-GPL--2.0--or--later-green.svg)](LICENSE)
@@ -180,6 +180,12 @@ Or use the REST API scan endpoint.
 ## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for a full list of changes.
+
+### 0.5.3 (2025-12-02)
+- **CRITICAL FIX**: False positive bug - failed scans no longer report as "PASS"
+- Added "SKIPPED" status for components that couldn't be scanned
+- Added warning banner when exec() is disabled
+- Health score shows "?" when results are unreliable
 
 ### 0.5.2 (2025-12-02)
 - Fixed: Auto-refresh page after scan completes to display results immediately

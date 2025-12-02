@@ -80,6 +80,30 @@
     color: #fff;
 }
 
+.jw-status-skipped {
+    background: #826eb4;
+    color: #fff;
+}
+
+/* Warning banner for exec() disabled */
+.jw-exec-warning {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-left: 4px solid #ffc107;
+    padding: 12px 15px;
+    margin: 15px 0;
+    border-radius: 4px;
+}
+
+.jw-exec-warning strong {
+    color: #856404;
+}
+
+.jw-exec-warning p {
+    margin: 5px 0 0;
+    color: #856404;
+}
+
 /* Health Score */
 .jw-health-card {
     background: #fff;

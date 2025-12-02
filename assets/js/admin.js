@@ -238,6 +238,7 @@
             var statusClass = 'jw-status-' + status.toLowerCase();
 
             var hasIssues = (summary.errors > 0 || summary.warnings > 0);
+            var scanFailed = (summary.scan_status === 'failed');
             var toggleBtn = hasIssues ? '<button type="button" class="button button-small jw-toggle-details" data-slug="' + this.escapeHtml(component.slug) + '">Details</button>' : '';
 
             var updateAvailable = '';
@@ -255,6 +256,7 @@
                     '<td>' + this.escapeHtml(component.version || '') + '</td>' +
                     '<td><span class="jw-status-badge ' + statusClass + '">' + this.escapeHtml(status) + '</span>' +
                         (hasIssues ? ' <small>(' + parseInt(summary.errors, 10) + 'e/' + parseInt(summary.warnings, 10) + 'w)</small>' : '') +
+                        (scanFailed && !hasIssues ? ' <small title="' + this.escapeHtml(summary.scan_error || 'Scan failed') + '">(scan failed)</small>' : '') +
                     '</td>' +
                     '<td>' + this.escapeHtml(remoteMeta.requires_php || '') || '&mdash;' + '</td>' +
                     '<td>' + this.escapeHtml(remoteMeta.tested || '') || '&mdash;' + '</td>' +

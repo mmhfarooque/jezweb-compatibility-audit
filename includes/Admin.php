@@ -102,6 +102,15 @@ class Admin {
                 <div class="notice notice-error"><p>No report found. Please run an audit first.</p></div>
             <?php endif; ?>
 
+            <?php if (!Auditor::is_exec_available()): ?>
+                <div class="jw-exec-warning">
+                    <strong>⚠️ Warning: exec() function is disabled</strong>
+                    <p>The PHP <code>exec()</code> function is required for accurate scanning but is currently disabled on your server.
+                    Scans will be marked as "SKIPPED" and results may not be reliable. Contact your hosting provider to enable it,
+                    or use WP-CLI on a server where exec() is available.</p>
+                </div>
+            <?php endif; ?>
+
             <p>Scan your WordPress site (themes, child themes, plugins) for PHP compatibility issues.</p>
 
             <!-- Audit Controls -->
@@ -159,10 +168,14 @@ class Admin {
         $pass_count = 0;
         $warn_count = 0;
         $fail_count = 0;
+        $skip_count = 0;
 
         foreach (['plugins', 'themes'] as $type) {
             foreach (($report['component_summaries'][$type] ?? []) as $slug => $summary) {
-                if (($summary['errors'] ?? 0) > 0) {
+                // Check for failed scans first
+                if (isset($summary['scan_status']) && $summary['scan_status'] === 'failed') {
+                    $skip_count++;
+                } elseif (($summary['errors'] ?? 0) > 0) {
                     $fail_count++;
                 } elseif (($summary['warnings'] ?? 0) > 0) {
                     $warn_count++;
@@ -172,9 +185,16 @@ class Admin {
             }
         }
 
-        $total = $pass_count + $warn_count + $fail_count;
-        $health_score = $total > 0 ? round(($pass_count / $total) * 100) : 100;
-        $health_class = $health_score >= 80 ? 'good' : ($health_score >= 50 ? 'moderate' : 'poor');
+        $total = $pass_count + $warn_count + $fail_count + $skip_count;
+
+        // If any scans were skipped, health score is unreliable
+        if ($skip_count > 0) {
+            $health_score = '?';
+            $health_class = 'moderate';
+        } else {
+            $health_score = $total > 0 ? round(($pass_count / $total) * 100) : 100;
+            $health_class = $health_score >= 80 ? 'good' : ($health_score >= 50 ? 'moderate' : 'poor');
+        }
         ?>
 
         <!-- Health Score Card -->
@@ -197,6 +217,12 @@ class Admin {
                     <div class="jw-stat-value" id="jw-total-fail"><?php echo esc_html($fail_count); ?></div>
                     <div class="jw-stat-label">Fail</div>
                 </div>
+                <?php if ($skip_count > 0): ?>
+                <div class="jw-stat-item">
+                    <div class="jw-stat-value" id="jw-total-skip" style="color: #826eb4;"><?php echo esc_html($skip_count); ?></div>
+                    <div class="jw-stat-label">Skipped</div>
+                </div>
+                <?php endif; ?>
                 <div class="jw-stat-item">
                     <div class="jw-stat-value" id="jw-total-errors"><?php echo esc_html($total_errors); ?></div>
                     <div class="jw-stat-label">Total Errors</div>
@@ -246,7 +272,16 @@ class Admin {
                     $summary = $report['component_summaries']['plugins'][$slug] ?? ['errors' => 0, 'warnings' => 0];
                     $details = $report['details']['plugins'][$slug] ?? [];
 
-                    $status = ($summary['errors'] ?? 0) > 0 ? 'FAIL' : (($summary['warnings'] ?? 0) > 0 ? 'WARN' : 'PASS');
+                    // Check for failed scans first
+                    if (isset($summary['scan_status']) && $summary['scan_status'] === 'failed') {
+                        $status = 'SKIPPED';
+                    } elseif (($summary['errors'] ?? 0) > 0) {
+                        $status = 'FAIL';
+                    } elseif (($summary['warnings'] ?? 0) > 0) {
+                        $status = 'WARN';
+                    } else {
+                        $status = 'PASS';
+                    }
                     $status_class = 'jw-status-' . strtolower($status);
 
                     $update = (!empty($meta['version']) && !empty($plugin['version']) && version_compare($meta['version'], $plugin['version'], '>'))
@@ -255,6 +290,7 @@ class Admin {
 
                     $changelog = !empty($meta['changelog']) ? $meta['changelog'] : (!empty($meta['homepage']) ? $meta['homepage'] : '');
                     $has_issues = ($summary['errors'] ?? 0) > 0 || ($summary['warnings'] ?? 0) > 0;
+                    $scan_error = $summary['scan_error'] ?? null;
                 ?>
                     <tr data-slug="<?php echo esc_attr($slug); ?>">
                         <td><?php echo esc_html($plugin['name'] ?? $slug); ?></td>
@@ -263,6 +299,8 @@ class Admin {
                             <span class="jw-status-badge <?php echo esc_attr($status_class); ?>"><?php echo esc_html($status); ?></span>
                             <?php if ($has_issues): ?>
                                 <small>(<?php echo intval($summary['errors']); ?>e/<?php echo intval($summary['warnings']); ?>w)</small>
+                            <?php elseif ($scan_error): ?>
+                                <small title="<?php echo esc_attr($scan_error); ?>">(scan failed)</small>
                             <?php endif; ?>
                         </td>
                         <td><?php echo esc_html($meta['requires_php'] ?? '—'); ?></td>
@@ -313,7 +351,16 @@ class Admin {
                     $summary = $report['component_summaries']['themes'][$slug] ?? ['errors' => 0, 'warnings' => 0];
                     $details = $report['details']['themes'][$slug] ?? [];
 
-                    $status = ($summary['errors'] ?? 0) > 0 ? 'FAIL' : (($summary['warnings'] ?? 0) > 0 ? 'WARN' : 'PASS');
+                    // Check for failed scans first
+                    if (isset($summary['scan_status']) && $summary['scan_status'] === 'failed') {
+                        $status = 'SKIPPED';
+                    } elseif (($summary['errors'] ?? 0) > 0) {
+                        $status = 'FAIL';
+                    } elseif (($summary['warnings'] ?? 0) > 0) {
+                        $status = 'WARN';
+                    } else {
+                        $status = 'PASS';
+                    }
                     $status_class = 'jw-status-' . strtolower($status);
 
                     $update = (!empty($meta['version']) && !empty($theme['version']) && version_compare($meta['version'], $theme['version'], '>'))
@@ -322,6 +369,7 @@ class Admin {
 
                     $changelog = !empty($meta['changelog']) ? $meta['changelog'] : (!empty($meta['homepage']) ? $meta['homepage'] : '');
                     $has_issues = ($summary['errors'] ?? 0) > 0 || ($summary['warnings'] ?? 0) > 0;
+                    $scan_error = $summary['scan_error'] ?? null;
                     $label = $key === 'parent' ? '(Parent)' : '(Active)';
                 ?>
                     <tr data-slug="<?php echo esc_attr($slug); ?>">
@@ -331,6 +379,8 @@ class Admin {
                             <span class="jw-status-badge <?php echo esc_attr($status_class); ?>"><?php echo esc_html($status); ?></span>
                             <?php if ($has_issues): ?>
                                 <small>(<?php echo intval($summary['errors']); ?>e/<?php echo intval($summary['warnings']); ?>w)</small>
+                            <?php elseif ($scan_error): ?>
+                                <small title="<?php echo esc_attr($scan_error); ?>">(scan failed)</small>
                             <?php endif; ?>
                         </td>
                         <td><?php echo esc_html($meta['requires_php'] ?? '—'); ?></td>

@@ -139,9 +139,11 @@ class Ajax {
             set_transient($audit_id, $audit_state, HOUR_IN_SECONDS);
         }
 
-        // Determine status
+        // Determine status - IMPORTANT: Check scan_status first!
         $status = 'PASS';
-        if (($summary['errors'] ?? 0) > 0) {
+        if (isset($summary['scan_status']) && $summary['scan_status'] === 'failed') {
+            $status = 'SKIPPED';  // Scan failed - don't give false PASS
+        } elseif (($summary['errors'] ?? 0) > 0) {
             $status = 'FAIL';
         } elseif (($summary['warnings'] ?? 0) > 0) {
             $status = 'WARN';

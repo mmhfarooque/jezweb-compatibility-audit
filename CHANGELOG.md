@@ -5,6 +5,23 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.5.3] - 2025-12-02
+### Fixed
+- **CRITICAL: False positive bug** - Scans that failed (e.g., exec() disabled) were reporting as "PASS" instead of indicating failure
+- Added "SKIPPED" status for components that couldn't be scanned
+- Health score now shows "?" when scans were skipped (unreliable results)
+
+### Added
+- Warning banner when exec() function is disabled on server
+- Scan error messages shown in UI with hover tooltip
+- "Skipped" count in health stats when scans fail
+
+### Changed
+- `summarize_scan()` now returns `scan_status` and `scan_error` fields
+- Status determination checks for failed scans before reporting PASS
+
+---
+
 ## [0.5.2] - 2025-12-02
 ### Fixed
 - Auto-refresh page after scan completes to display results immediately
