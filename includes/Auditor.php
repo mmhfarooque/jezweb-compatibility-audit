@@ -185,9 +185,17 @@ class Auditor {
             $phpcs_bin = $phpcs_bin_fallback;
         }
 
-        // Check which PHP paths exist
+        // Check which PHP paths exist (including php-cli variants)
         $php_paths_checked = [];
-        $check_paths = ['/usr/bin/php', '/usr/local/bin/php', '/opt/cpanel/ea-php74/root/usr/bin/php', '/opt/alt/php74/usr/bin/php'];
+        $check_paths = [
+            '/usr/bin/php-cli',
+            '/usr/bin/php',
+            '/opt/cpanel/ea-php74/root/usr/bin/php-cli',
+            '/opt/cpanel/ea-php74/root/usr/bin/php',
+            '/opt/alt/php74/usr/bin/php-cli',
+            '/opt/alt/php74/usr/bin/php',
+            '/usr/local/lsws/lsphp74/bin/php',
+        ];
         foreach ($check_paths as $p) {
             $php_paths_checked[$p] = file_exists($p) ? 'exists' : 'not found';
         }
@@ -378,10 +386,42 @@ class Auditor {
      * @return string|false Path to PHP CLI binary or false if not found
      */
     public static function find_php_binary() {
-        // Common PHP CLI binary locations - check these FIRST before PHP_BINARY
-        // because PHP_BINARY might return lsphp (LiteSpeed) which doesn't work for CLI
+        // Common PHP CLI binary locations
+        // Note: We need ACTUAL CLI php, not cgi-fcgi or lsphp
         $possible_paths = [
-            // Standard locations
+            // cPanel EA-PHP CLI binaries (most reliable on cPanel)
+            '/opt/cpanel/ea-php83/root/usr/bin/php-cli',
+            '/opt/cpanel/ea-php82/root/usr/bin/php-cli',
+            '/opt/cpanel/ea-php81/root/usr/bin/php-cli',
+            '/opt/cpanel/ea-php80/root/usr/bin/php-cli',
+            '/opt/cpanel/ea-php74/root/usr/bin/php-cli',
+            // CloudLinux alt-php CLI
+            '/opt/alt/php83/usr/bin/php-cli',
+            '/opt/alt/php82/usr/bin/php-cli',
+            '/opt/alt/php81/usr/bin/php-cli',
+            '/opt/alt/php80/usr/bin/php-cli',
+            '/opt/alt/php74/usr/bin/php-cli',
+            // Standard CLI locations
+            '/usr/bin/php-cli',
+            '/usr/local/bin/php-cli',
+            // LiteSpeed CLI binaries
+            '/usr/local/lsws/lsphp83/bin/php-cli',
+            '/usr/local/lsws/lsphp82/bin/php-cli',
+            '/usr/local/lsws/lsphp81/bin/php-cli',
+            '/usr/local/lsws/lsphp80/bin/php-cli',
+            '/usr/local/lsws/lsphp74/bin/php-cli',
+            '/usr/local/lsws/lsphp83/bin/php',
+            '/usr/local/lsws/lsphp82/bin/php',
+            '/usr/local/lsws/lsphp81/bin/php',
+            '/usr/local/lsws/lsphp80/bin/php',
+            '/usr/local/lsws/lsphp74/bin/php',
+            // Plesk
+            '/opt/plesk/php/8.3/bin/php',
+            '/opt/plesk/php/8.2/bin/php',
+            '/opt/plesk/php/8.1/bin/php',
+            '/opt/plesk/php/8.0/bin/php',
+            '/opt/plesk/php/7.4/bin/php',
+            // Standard locations (check last as they might be CGI)
             '/usr/bin/php',
             '/usr/local/bin/php',
             // Versioned binaries
@@ -390,65 +430,48 @@ class Auditor {
             '/usr/bin/php8.1',
             '/usr/bin/php8.0',
             '/usr/bin/php7.4',
-            // cPanel EA-PHP
-            '/opt/cpanel/ea-php83/root/usr/bin/php',
-            '/opt/cpanel/ea-php82/root/usr/bin/php',
-            '/opt/cpanel/ea-php81/root/usr/bin/php',
-            '/opt/cpanel/ea-php80/root/usr/bin/php',
-            '/opt/cpanel/ea-php74/root/usr/bin/php',
-            // CloudLinux alt-php
-            '/opt/alt/php83/usr/bin/php',
-            '/opt/alt/php82/usr/bin/php',
-            '/opt/alt/php81/usr/bin/php',
-            '/opt/alt/php80/usr/bin/php',
-            '/opt/alt/php74/usr/bin/php',
-            // Plesk
-            '/opt/plesk/php/8.3/bin/php',
-            '/opt/plesk/php/8.2/bin/php',
-            '/opt/plesk/php/8.1/bin/php',
-            '/opt/plesk/php/8.0/bin/php',
-            '/opt/plesk/php/7.4/bin/php',
-            // Additional LiteSpeed paths (CLI version, not lsphp)
-            '/usr/local/lsws/lsphp83/bin/php',
-            '/usr/local/lsws/lsphp82/bin/php',
-            '/usr/local/lsws/lsphp81/bin/php',
-            '/usr/local/lsws/lsphp80/bin/php',
-            '/usr/local/lsws/lsphp74/bin/php',
         ];
 
         foreach ($possible_paths as $path) {
             if (file_exists($path) && is_executable($path)) {
-                // Verify it's actually a CLI PHP by checking if it can run -v
+                // Verify it's actually a CLI PHP (not CGI/FastCGI/lsphp)
                 $test_output = [];
                 $test_code = 0;
                 exec(escapeshellcmd($path) . ' -v 2>&1', $test_output, $test_code);
                 $output_str = implode("\n", $test_output);
+
                 // Valid PHP CLI will output version info starting with "PHP"
-                if ($test_code === 0 && strpos($output_str, 'PHP') === 0) {
+                // and should contain "(cli)" in the version string
+                // CGI/FastCGI outputs "Content-type:" header first
+                if ($test_code === 0 &&
+                    strpos($output_str, 'PHP') === 0 &&
+                    strpos($output_str, 'Content-type:') === false &&
+                    (strpos($output_str, '(cli)') !== false || strpos($output_str, 'cli') !== false)) {
                     return $path;
                 }
             }
         }
 
-        // Try 'which php'
+        // Try 'which php-cli' first
+        $which_output = [];
+        exec('which php-cli 2>/dev/null', $which_output);
+        if (!empty($which_output[0]) && is_executable($which_output[0])) {
+            return $which_output[0];
+        }
+
+        // Try 'which php' but verify it's CLI
         $which_output = [];
         exec('which php 2>/dev/null', $which_output);
         if (!empty($which_output[0]) && is_executable($which_output[0])) {
-            // Verify it works
             $test_output = [];
             $test_code = 0;
             exec(escapeshellcmd($which_output[0]) . ' -v 2>&1', $test_output, $test_code);
             $output_str = implode("\n", $test_output);
-            if ($test_code === 0 && strpos($output_str, 'PHP') === 0) {
+            if ($test_code === 0 &&
+                strpos($output_str, 'PHP') === 0 &&
+                strpos($output_str, 'Content-type:') === false &&
+                strpos($output_str, '(cli)') !== false) {
                 return $which_output[0];
-            }
-        }
-
-        // Last resort: check PHP_BINARY but verify it's not lsphp
-        if (defined('PHP_BINARY') && PHP_BINARY && is_executable(PHP_BINARY)) {
-            // Skip if it's lsphp (LiteSpeed SAPI, not CLI)
-            if (strpos(PHP_BINARY, 'lsphp') === false) {
-                return PHP_BINARY;
             }
         }
 
