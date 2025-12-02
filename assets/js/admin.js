@@ -226,26 +226,26 @@
             var statusClass = 'jw-status-' + status.toLowerCase();
 
             var hasIssues = (summary.errors > 0 || summary.warnings > 0);
-            var toggleBtn = hasIssues ? '<button type="button" class="button button-small jw-toggle-details" data-slug="' + component.slug + '">Details</button>' : '';
+            var toggleBtn = hasIssues ? '<button type="button" class="button button-small jw-toggle-details" data-slug="' + this.escapeHtml(component.slug) + '">Details</button>' : '';
 
             var updateAvailable = '';
             if (remoteMeta.version && component.version) {
                 if (this.compareVersions(remoteMeta.version, component.version) > 0) {
-                    updateAvailable = '<span class="jw-update-available">Update to ' + remoteMeta.version + '</span>';
+                    updateAvailable = '<span class="jw-update-available">Update to ' + this.escapeHtml(remoteMeta.version) + '</span>';
                 }
             }
 
-            var changelogLink = remoteMeta.changelog ? '<a href="' + remoteMeta.changelog + '" target="_blank" rel="noopener">View</a>' : '&mdash;';
+            var changelogLink = remoteMeta.changelog ? '<a href="' + this.escapeHtml(remoteMeta.changelog) + '" target="_blank" rel="noopener">View</a>' : '&mdash;';
 
             return $(
-                '<tr data-slug="' + component.slug + '">' +
+                '<tr data-slug="' + this.escapeHtml(component.slug) + '">' +
                     '<td>' + this.escapeHtml(component.name) + '</td>' +
                     '<td>' + this.escapeHtml(component.version || '') + '</td>' +
-                    '<td><span class="jw-status-badge ' + statusClass + '">' + status + '</span>' +
-                        (hasIssues ? ' <small>(' + summary.errors + 'e/' + summary.warnings + 'w)</small>' : '') +
+                    '<td><span class="jw-status-badge ' + statusClass + '">' + this.escapeHtml(status) + '</span>' +
+                        (hasIssues ? ' <small>(' + parseInt(summary.errors, 10) + 'e/' + parseInt(summary.warnings, 10) + 'w)</small>' : '') +
                     '</td>' +
-                    '<td>' + (remoteMeta.requires_php || '&mdash;') + '</td>' +
-                    '<td>' + (remoteMeta.tested || '&mdash;') + '</td>' +
+                    '<td>' + this.escapeHtml(remoteMeta.requires_php || '') || '&mdash;' + '</td>' +
+                    '<td>' + this.escapeHtml(remoteMeta.tested || '') || '&mdash;' + '</td>' +
                     '<td>' + (updateAvailable || '&mdash;') + '</td>' +
                     '<td>' + changelogLink + '</td>' +
                     '<td>' + toggleBtn + '</td>' +
@@ -254,12 +254,13 @@
         },
 
         createDetailRow: function(component, data) {
+            var self = this;
             var details = data.details || {};
             var files = details.files || {};
             var hasIssues = Object.keys(files).length > 0;
 
             if (!hasIssues) {
-                return $('<tr class="jw-detail-row" data-detail-slug="' + component.slug + '" style="display:none;"><td colspan="8"><p>No issues found.</p></td></tr>');
+                return $('<tr class="jw-detail-row" data-detail-slug="' + self.escapeHtml(component.slug) + '" style="display:none;"><td colspan="8"><p>No issues found.</p></td></tr>');
             }
 
             var issuesHtml = '<table class="jw-issues-table"><thead><tr><th>File</th><th>Line</th><th>Type</th><th>Message</th></tr></thead><tbody>';
@@ -273,17 +274,17 @@
                     var shortPath = filePath.split('/').slice(-2).join('/');
 
                     issuesHtml += '<tr class="' + typeClass + '">' +
-                        '<td title="' + filePath + '">' + shortPath + '</td>' +
-                        '<td>' + msg.line + '</td>' +
-                        '<td>' + msg.type + '</td>' +
-                        '<td>' + msg.message + '</td>' +
+                        '<td title="' + self.escapeHtml(filePath) + '">' + self.escapeHtml(shortPath) + '</td>' +
+                        '<td>' + self.escapeHtml(String(msg.line || '')) + '</td>' +
+                        '<td>' + self.escapeHtml(msg.type || '') + '</td>' +
+                        '<td>' + self.escapeHtml(msg.message || '') + '</td>' +
                     '</tr>';
                 });
             }
 
             issuesHtml += '</tbody></table>';
 
-            return $('<tr class="jw-detail-row" data-detail-slug="' + component.slug + '" style="display:none;"><td colspan="8">' + issuesHtml + '</td></tr>');
+            return $('<tr class="jw-detail-row" data-detail-slug="' + self.escapeHtml(component.slug) + '" style="display:none;"><td colspan="8">' + issuesHtml + '</td></tr>');
         },
 
         toggleDetails: function(e) {

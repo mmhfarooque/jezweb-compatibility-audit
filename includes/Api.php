@@ -164,6 +164,15 @@ class Api {
         $path = $request->get_param('path');
         $php_version = $request->get_param('php_version') ?? '8.0-';
 
+        // Check for directory traversal attempts
+        if (preg_match('/\.\./', $path)) {
+            return new \WP_Error(
+                'jw_compat_invalid_path',
+                'Invalid path format.',
+                ['status' => 400]
+            );
+        }
+
         // Validate path is within WordPress
         $real_path = realpath($path);
         $wp_content = realpath(WP_CONTENT_DIR);
@@ -176,7 +185,7 @@ class Api {
             );
         }
 
-        if (strpos($real_path, $wp_content) !== 0) {
+        if ($wp_content === false || strpos($real_path, $wp_content) !== 0) {
             return new \WP_Error(
                 'jw_compat_path_not_allowed',
                 'Path must be within wp-content directory.',

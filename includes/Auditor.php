@@ -148,6 +148,27 @@ class Auditor {
     }
 
     /**
+     * Check if exec() function is available
+     *
+     * @return bool
+     */
+    public static function is_exec_available() {
+        if (!function_exists('exec')) {
+            return false;
+        }
+
+        $disabled = ini_get('disable_functions');
+        if (!empty($disabled)) {
+            $disabled_functions = array_map('trim', explode(',', $disabled));
+            if (in_array('exec', $disabled_functions, true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Scan a single component (plugin or theme directory) for PHP compatibility
      *
      * @param string $path Path to scan
@@ -156,11 +177,38 @@ class Auditor {
      */
     public static function scan_component($path, $php_version = '8.0-') {
         if (!is_dir($path) && !is_file($path)) {
-            return null;
+            return ['error' => 'Path not found or not accessible.'];
+        }
+
+        // Check if exec is available
+        if (!self::is_exec_available()) {
+            return [
+                'error' => 'The exec() PHP function is disabled. PHPCS scanning requires exec() to be enabled.',
+                'totals' => ['errors' => 0, 'warnings' => 0],
+                'files' => [],
+            ];
         }
 
         $phpcs_bin = JW_COMPAT_AUDIT_DIR . 'vendor/bin/phpcs';
         $ruleset = JW_COMPAT_AUDIT_DIR . 'phpcs-compat.xml';
+
+        // Validate PHPCS binary exists
+        if (!file_exists($phpcs_bin)) {
+            return [
+                'error' => 'PHPCS binary not found. Please run composer install.',
+                'totals' => ['errors' => 0, 'warnings' => 0],
+                'files' => [],
+            ];
+        }
+
+        // Validate ruleset exists
+        if (!file_exists($ruleset)) {
+            return [
+                'error' => 'PHPCS ruleset not found.',
+                'totals' => ['errors' => 0, 'warnings' => 0],
+                'files' => [],
+            ];
+        }
 
         // Build command
         $cmd = sprintf(
@@ -268,7 +316,20 @@ class Auditor {
      */
     public static function save_report($report) {
         $json = wp_json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-        return file_put_contents(JW_COMPAT_AUDIT_REPORT, $json) !== false;
+
+        // Initialize WP_Filesystem
+        global $wp_filesystem;
+        if (empty($wp_filesystem)) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            WP_Filesystem();
+        }
+
+        if ($wp_filesystem) {
+            return $wp_filesystem->put_contents(JW_COMPAT_AUDIT_REPORT, $json, FS_CHMOD_FILE);
+        }
+
+        // Fallback with proper permissions
+        return file_put_contents(JW_COMPAT_AUDIT_REPORT, $json, LOCK_EX) !== false;
     }
 
     /**
@@ -281,7 +342,20 @@ class Auditor {
             return null;
         }
 
-        $json = file_get_contents(JW_COMPAT_AUDIT_REPORT);
+        // Initialize WP_Filesystem
+        global $wp_filesystem;
+        if (empty($wp_filesystem)) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            WP_Filesystem();
+        }
+
+        if ($wp_filesystem && $wp_filesystem->exists(JW_COMPAT_AUDIT_REPORT)) {
+            $json = $wp_filesystem->get_contents(JW_COMPAT_AUDIT_REPORT);
+        } else {
+            // Fallback
+            $json = file_get_contents(JW_COMPAT_AUDIT_REPORT);
+        }
+
         return json_decode($json, true);
     }
 

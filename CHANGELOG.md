@@ -5,6 +5,21 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.5.1] - 2025-12-02
+### Security
+- Enhanced input validation and sanitization across all AJAX handlers
+- Added strict path traversal protection for scan operations
+- Improved XSS prevention in JavaScript with proper HTML escaping
+- Added validation for audit IDs and PHP version parameters
+- Implemented WP_Filesystem for secure file operations
+- Added exec() availability check with proper error messaging
+
+### Changed
+- Strengthened REST API path validation
+- Improved error handling in Auditor class
+
+---
+
 ## [0.5.0] - 2025-12-02
 ### Added
 - **AJAX Batch Processing**: Real-time progress bar with component-by-component scanning

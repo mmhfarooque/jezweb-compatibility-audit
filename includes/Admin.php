@@ -98,7 +98,7 @@ class Admin {
         <div class="wrap">
             <h1>Jezweb Compatibility Audit</h1>
 
-            <?php if (isset($_GET['err']) && $_GET['err'] === 'missing'): ?>
+            <?php if (isset($_GET['err']) && sanitize_key($_GET['err']) === 'missing'): ?>
                 <div class="notice notice-error"><p>No report found. Please run an audit first.</p></div>
             <?php endif; ?>
 

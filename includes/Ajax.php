@@ -31,6 +31,11 @@ class Ajax {
 
         $php_version = isset($_POST['php_version']) ? sanitize_text_field($_POST['php_version']) : '8.0-';
 
+        // Validate PHP version
+        if (!in_array($php_version, ['8.0-', '8.1-', '8.2-', '8.3-', '8.3', '8.4-'], true)) {
+            $php_version = '8.0-';
+        }
+
         // Get inventory and queue
         $inventory = Auditor::get_inventory();
         $queue = Auditor::get_scan_queue();
@@ -73,20 +78,46 @@ class Ajax {
         }
 
         $audit_id = isset($_POST['audit_id']) ? sanitize_text_field($_POST['audit_id']) : '';
-        $component_type = isset($_POST['type']) ? sanitize_text_field($_POST['type']) : '';
-        $component_slug = isset($_POST['slug']) ? sanitize_text_field($_POST['slug']) : '';
+        $component_type = isset($_POST['type']) ? sanitize_key($_POST['type']) : '';
+        $component_slug = isset($_POST['slug']) ? sanitize_file_name($_POST['slug']) : '';
         $component_path = isset($_POST['path']) ? sanitize_text_field($_POST['path']) : '';
         $php_version = isset($_POST['php_version']) ? sanitize_text_field($_POST['php_version']) : '8.0-';
 
-        if (empty($audit_id) || empty($component_type) || empty($component_slug) || empty($component_path)) {
+        // Validate audit_id format (must start with jw_audit_)
+        if (empty($audit_id) || strpos($audit_id, 'jw_audit_') !== 0) {
+            wp_send_json_error(['message' => 'Invalid audit ID.']);
+        }
+
+        // Validate component type
+        if (!in_array($component_type, ['plugin', 'theme'], true)) {
+            wp_send_json_error(['message' => 'Invalid component type.']);
+        }
+
+        // Validate PHP version
+        if (!in_array($php_version, ['8.0-', '8.1-', '8.2-', '8.3-', '8.3', '8.4-'], true)) {
+            $php_version = '8.0-';
+        }
+
+        if (empty($component_slug) || empty($component_path)) {
             wp_send_json_error(['message' => 'Missing required parameters.']);
         }
 
-        // Validate path is within WordPress directories
-        $wp_content = WP_CONTENT_DIR;
+        // Validate path is within WordPress directories (strict validation)
+        $real_wp_content = realpath(WP_CONTENT_DIR);
         $real_path = realpath($component_path);
-        if ($real_path === false || strpos($real_path, realpath($wp_content)) !== 0) {
-            wp_send_json_error(['message' => 'Invalid path.']);
+
+        // Path must exist and be within wp-content
+        if ($real_path === false) {
+            wp_send_json_error(['message' => 'Path not found.']);
+        }
+
+        if ($real_wp_content === false || strpos($real_path, $real_wp_content) !== 0) {
+            wp_send_json_error(['message' => 'Access denied: path outside allowed directory.']);
+        }
+
+        // Ensure path doesn't contain directory traversal attempts
+        if (preg_match('/\.\./', $component_path)) {
+            wp_send_json_error(['message' => 'Invalid path format.']);
         }
 
         // Run scan
@@ -138,8 +169,14 @@ class Ajax {
 
         $audit_id = isset($_POST['audit_id']) ? sanitize_text_field($_POST['audit_id']) : '';
 
-        if (empty($audit_id)) {
-            wp_send_json_error(['message' => 'Missing audit ID.']);
+        // Validate audit_id format
+        if (empty($audit_id) || strpos($audit_id, 'jw_audit_') !== 0) {
+            wp_send_json_error(['message' => 'Invalid audit ID.']);
+        }
+
+        // Sanitize audit_id to only allow alphanumeric and underscore
+        if (!preg_match('/^jw_audit_[0-9]+$/', $audit_id)) {
+            wp_send_json_error(['message' => 'Invalid audit ID format.']);
         }
 
         $audit_state = get_transient($audit_id);
